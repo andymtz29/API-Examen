@@ -1,18 +1,36 @@
 import { Router } from 'express';
 
 // Controladores de cada genero
-// import { consultaAlbum, consulta_individual_Album, insercion_Album, actualizar_Album, eliminar_Album  } from '../controllers/KpopAlbum.controller.js';
 import { consultaEps, consulta_individual_Eps, insercion_Eps, actualizar_Eps, eliminar_Eps  } from '../controllers/KpopEPs.controller.js';
 import { consultaSolitario, consulta_individual_Solitario, insercion_Solitario, actualizar_Solitario, eliminar_Solitario  } from '../controllers/KpopSolitario.controller.js';
-import {iniciar_sesion, registro_usuario} from '../controllers/Usuarios.controller.js'
-
-// import { consultaUsuarios, consulta_individual_Usuario, insercion_Usuario, actualizar_Usuario, eliminar_Usuario, registro_usuario } from "../controllers/Usuarios.controller.js";
-
+import {iniciar_sesion, registro_usuario, consultaUsuario, editar_usuario, eliminar_usuario, cerrar_sesion} from '../controllers/Usuarios.controller.js'
+import authMiddleware from '../config/authMiddleware.js'; 
+import uploads from '../config/archivosConfig.js';
+import {cargar_imagen, eliminar_imagen} from '../controllers/Archivo.controller.js';
+import fs from 'fs';
+import path from 'path';
 const router = Router();
 
-import authMiddleware from '../config/authMiddleware.js'; 
 
+//archivos
+router.post("/subir",uploads.single('imagen'),cargar_imagen);
+router.delete("/eliminar/:nombre",eliminar_imagen);
+// Ruta para listar imágenes existentes en la carpeta uploads
+router.get("/imagenes", (req, res) => {
+  const directorio = path.join(process.cwd(), 'uploads');
 
+  fs.readdir(directorio, (err, archivos) => {
+    if (err) {
+      return res.status(500).json({ estatus: "error", msj: "Error al leer la carpeta" });
+    }
+
+    const imagenes = archivos.filter(nombre =>
+      ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(path.extname(nombre).toLowerCase())
+    );
+
+    res.json(imagenes);
+  });
+});
 
 // 🎶 Eps de Kpop
 router.get("/eps", consultaEps);
@@ -31,17 +49,13 @@ router.delete("/solitario/eliminar/:tituloAlbum",authMiddleware, eliminar_Solita
 
 router.post("/registro",registro_usuario)
 router.post("/login", iniciar_sesion)
-// router.get("/usuarios", consultaUsuarios);
-// router.get("/usuarios/:usuario", consulta_individual_Usuario);
-// router.post("/usuarios/insercion", insercion_Usuario);
-// router.put("/usuarios/actualizar/:usuario", actualizar_Usuario);
-// router.delete("/usuarios/eliminar/:usuario", eliminar_Usuario);
+router.get("/usuarios", consultaUsuario);
+router.post("/cerrar", cerrar_sesion)
+router.put("/usuarios/actualizar/:nombreUsuario", authMiddleware, editar_usuario);
+router.delete("/usuarios/eliminar/:nombreUsuario", authMiddleware, eliminar_usuario);
 
 
-// router.get("/albumes", consultaAlbum);
-// router.get("/albumes/:tituloAlbum", consulta_individual_Album);+
-// router.post("/albumes/insercion", insercion_Album);
-// router.put("/albumes/actualizar/:tituloAlbum", actualizar_Album);
-// router.delete("/albumes/eliminar/:tituloAlbum", eliminar_Album);6 
+
+
 
 export default router;
